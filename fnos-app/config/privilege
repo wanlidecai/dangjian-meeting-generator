@@ -1,0 +1,7 @@
+{
+  "defaults": {
+    "run-as": "package"
+  },
+  "username": "dangjian_recorder",
+  "groupname": "dangjian_recorder"
+}

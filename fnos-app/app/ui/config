@@ -1,0 +1,17 @@
+{
+  ".url": {
+    "DangjianRecorder.main": {
+      "title": "党建会议记录生成器",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "",
+      "gatewayPrefix": "/app/DangjianRecorder",
+      "gatewaySocket": "app.sock",
+      "url": "/app/DangjianRecorder",
+      "allUsers": false,
+      "control": {
+        "accessPerm": "readonly"
+      }
+    }
+  }
+}

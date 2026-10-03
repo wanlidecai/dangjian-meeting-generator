@@ -1,0 +1,16 @@
+appname=DangjianRecorder
+version=1.0.0
+display_name=党建会议记录生成器
+desc=支持三类会议、DeepSeek 模型配置与公开材料检索。
+source=thirdparty
+platform=all
+maintainer=本地应用开发者
+distributor=本地应用开发者
+install_dep_apps=nodejs_v22
+os_min_version=1.2.0
+desktop_uidir=ui
+desktop_applaunchname=DangjianRecorder.main
+ctl_stop=true
+checkport=false
+disable_authorization_path=true
+changelog=首个飞牛应用版本，支持管理员访问、模型配置和会议记录生成。

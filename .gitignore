@@ -1,0 +1,27 @@
+.env
+.env.*
+!.env.example
+node_modules/
+*.log
+.DS_Store
+.gradle/
+build/
+out/
+target/
+coverage/
+.tools/
+.playwright-cli/
+.local-data/
+.dev-data/
+output/
+workplace/
+.vscode/
+.idea/
+*.pid
+*.sqlite
+*.sqlite3
+*.db
+__pycache__/
+*.pyc
+# Local Windows bundle contains a private API key; publish the sanitized bundle instead.
+/dist/党建会议记录生成器-Windows.zip

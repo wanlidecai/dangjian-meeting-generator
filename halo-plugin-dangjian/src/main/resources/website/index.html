@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="dj-base-path" content="__DJ_BASE_PATH__" />
+    <title>党建会议记录生成器</title>
+    <link rel="stylesheet" href="__DJ_BASE_PATH__/assets/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <h1>党建会议记录生成器</h1>
+            <p>输入议题，编辑人员，自动生成可归档记录。</p>
+          </div>
+          <button id="generateBtn" class="primary-btn" type="button" disabled>生成记录</button>
+        </header>
+
+        <section class="access-panel" aria-label="生成服务状态">
+          <p id="accessText" role="status" aria-live="polite">正在读取生成服务配置…</p>
+          <div class="access-actions">
+            <a id="loginLink" class="login-link" href="__DJ_LOGIN_URL__" hidden>登录后生成</a>
+            <button id="retryDefaultsBtn" class="ghost-btn" type="button" hidden>重新读取配置</button>
+          </div>
+        </section>
+
+        <noscript><p class="access-panel">请启用浏览器 JavaScript，以编辑并生成会议记录。</p></noscript>
+
+        <section class="panel meeting-type-panel">
+          <label for="meetingTypeInput">
+            <span>会议类型</span>
+            <select id="meetingTypeInput">
+              <option value="theme-day">主题党日</option>
+              <option value="members-meeting">党员大会</option>
+              <option value="committee-meeting">支委会</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>议题</h2>
+            <button id="addTopicBtn" class="ghost-btn" type="button">增加议题</button>
+          </div>
+          <div id="topicsList" class="topics-list"></div>
+        </section>
+
+        <section id="branchMattersPanel" class="panel" hidden>
+          <div class="section-title">
+            <h2>支部事项</h2>
+          </div>
+          <label class="branch-matters-field" for="branchMattersInput">
+            <span>讨论事项（每行一项）</span>
+            <textarea id="branchMattersInput" rows="4" aria-describedby="branchMattersHint">研究党员大会议程及组织安排
+讨论党员发展工作及培养考察安排</textarea>
+          </label>
+          <p id="branchMattersHint" class="field-hint">请按实际会议修改，留空时使用默认事项。生成时将在学习议题后增加这些事项的讨论。</p>
+        </section>
+
+        <section class="panel people-panel">
+          <div class="section-title">
+            <h2>人员</h2>
+            <button id="addPersonBtn" class="ghost-btn" type="button">增加成员</button>
+          </div>
+          <div class="role-grid">
+            <label>
+              <span>党支部书记</span>
+              <input id="secretaryInput" type="text" value="李强" />
+            </label>
+            <label>
+              <span>副书记</span>
+              <input id="deputyInput" type="text" value="郭琳" />
+            </label>
+            <label>
+              <span>委员</span>
+              <input id="committeeInput" type="text" value="王丽" />
+            </label>
+          </div>
+          <div id="peopleList" class="people-list"></div>
+          <p id="committeePeopleHint" class="field-hint" hidden>支委会参会人员为书记、副书记和委员。</p>
+        </section>
+      </section>
+
+      <aside class="result-panel">
+        <div class="result-header">
+          <div>
+            <h2 id="resultTitle">生成结果</h2>
+            <span id="statusText" role="status" aria-live="polite">等待生成</span>
+          </div>
+          <div class="result-actions">
+            <button id="copyBtn" class="icon-btn" type="button" title="复制">复制</button>
+            <button id="downloadBtn" class="icon-btn" type="button" title="下载">下载</button>
+          </div>
+        </div>
+        <textarea id="resultText" aria-label="生成结果，可直接修改" spellcheck="false" placeholder="生成后的会议记录会显示在这里，可直接修改和复制。"></textarea>
+        <div id="sourcesBox" class="sources-box"></div>
+      </aside>
+    </main>
+
+    <template id="topicTemplate">
+      <div class="topic-row">
+        <div class="topic-index"></div>
+        <input class="topic-input" type="text" aria-label="议题题目" placeholder="请输入议题题目" />
+        <button class="remove-btn" type="button">删除</button>
+      </div>
+    </template>
+
+    <template id="personTemplate">
+      <div class="person-chip">
+        <input class="person-input" type="text" aria-label="成员姓名" />
+        <button class="remove-person-btn" type="button" aria-label="删除成员">×</button>
+      </div>
+    </template>
+
+    <script src="__DJ_BASE_PATH__/assets/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+apiVersion: v1alpha1
+kind: Setting
+metadata:
+  name: dangjian-settings
+spec:
+  forms:
+    - group: basic
+      label: 页面与生成设置
+      formSchema:
+        - $formkit: text
+          name: basePath
+          label: 访问路径
+          value: /dangjian
+          validation: required
+          help: 填写 /dangjian、/meeting 或 /tools/dangjian。保存后立即使用新地址，旧地址不再提供本页面；请避开已有文章和页面地址。
+        - $formkit: secret
+          name: apiKeySecretName
+          label: DeepSeek API 密钥
+          descriptionPreset: 党建会议记录生成器 DeepSeek API
+          requiredKeys:
+            - key: token
+              help: 从 DeepSeek 开放平台取得的 API Key
+        - $formkit: text
+          name: model
+          label: DeepSeek 模型
+          value: deepseek-v4-flash
+          validation: required|length:1,128
+          help: 填写当前账号支持的模型名称。
+        - $formkit: switch
+          name: searchEnabled
+          label: 检索学习参考材料
+          value: true
+          help: 从搜索引擎检索公开材料。检索失败时仍可根据议题生成，请按实际会议内容核对。
+        - $formkit: switch
+          name: allowAnonymous
+          label: 允许未登录访客生成
+          value: false
+          help: 默认登录 Halo 后使用。开启后访客也可调用 DeepSeek，并消耗你的 API 额度。
+        - $formkit: number
+          name: requestsPerMinute
+          label: 每个用户或访客每分钟生成次数
+          value: 3
+          validation: required|between:1,30
+          min: 1
+          max: 30

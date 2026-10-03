@@ -1,0 +1,171 @@
+#!/bin/bash
+# fnOS invokes this script as the dedicated package user.
+set -u
+umask 077
+
+fail() {
+  printf '%s\n' "$1" >&2
+  if [ -n "${TRIM_TEMP_LOGFILE:-}" ]; then
+    printf '%s\n' "$1" > "$TRIM_TEMP_LOGFILE"
+  fi
+  exit 1
+}
+
+[ -n "${TRIM_APPDEST:-}" ] || fail "缺少应用安装目录，请通过飞牛应用中心启动。"
+[ -n "${TRIM_PKGVAR:-}" ] || fail "缺少应用数据目录，请通过飞牛应用中心启动。"
+SERVER="$TRIM_APPDEST/server.js"
+SOCKET="$TRIM_APPDEST/app.sock"
+PID_FILE="$TRIM_PKGVAR/app.pid"
+LOG_FILE="$TRIM_PKGVAR/app.log"
+LOCK_DIR="$TRIM_PKGVAR/.control-lock"
+export PATH="/var/apps/nodejs_v22/target/bin:$PATH"
+
+log() {
+  printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" >> "$LOG_FILE"
+}
+
+# A PID alone can be reused. Check the Linux process start time and exact argv.
+process_start_time() {
+  [ -r "/proc/$1/stat" ] || return 1
+  awk '{ sub(/^.*\) /, ""); print $20 }' "/proc/$1/stat" 2>/dev/null
+}
+
+matches_process() {
+  local pid="$1" expected_start="$2" actual_start
+  [[ "$pid" =~ ^[0-9]+$ ]] && [ "$pid" -gt 1 ] || return 1
+  kill -0 "$pid" 2>/dev/null || return 1
+  actual_start="$(process_start_time "$pid")" || return 1
+  [ -n "$actual_start" ] && [ "$actual_start" = "$expected_start" ] || return 1
+  tr '\000' '\n' < "/proc/$pid/cmdline" 2>/dev/null | grep -Fqx -- "$SERVER" || return 1
+  tr '\000' '\n' < "/proc/$pid/cmdline" 2>/dev/null | grep -Fqx -- "$SOCKET" || return 1
+}
+
+read_running_process() {
+  [ -r "$PID_FILE" ] || return 1
+  IFS=' ' read -r APP_PID APP_START < "$PID_FILE" || return 1
+  [ -n "${APP_START:-}" ] || return 1
+  matches_process "$APP_PID" "$APP_START"
+}
+
+terminate_process() {
+  local pid="$1" started="$2" count=0
+  matches_process "$pid" "$started" || return 0
+  kill -TERM "$pid" 2>/dev/null || true
+  while matches_process "$pid" "$started" && [ "$count" -lt 15 ]; do
+    sleep 1
+    count=$((count + 1))
+  done
+  if matches_process "$pid" "$started"; then
+    kill -KILL "$pid" 2>/dev/null || true
+  fi
+}
+
+lock_control() {
+  local owner count=0
+  while ! mkdir "$LOCK_DIR" 2>/dev/null; do
+    owner=""
+    if [ -r "$LOCK_DIR/owner" ]; then
+      IFS= read -r owner < "$LOCK_DIR/owner" || true
+      if [[ "$owner" =~ ^[0-9]+$ ]] && ! kill -0 "$owner" 2>/dev/null; then
+        rm -f "$LOCK_DIR/owner"
+        rmdir "$LOCK_DIR" 2>/dev/null || true
+      fi
+    fi
+    count=$((count + 1))
+    [ "$count" -lt 15 ] || fail "另一项启动或停止操作尚未结束，请稍后重试。"
+    sleep 1
+  done
+  printf '%s\n' "$$" > "$LOCK_DIR/owner"
+  trap 'rm -f "$LOCK_DIR/owner"; rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
+  trap 'exit 1' HUP INT TERM
+}
+
+start_app() {
+  [ -f "$SERVER" ] || fail "应用运行文件缺失，请重新安装应用。"
+  [ -r "/proc/$$/stat" ] || fail "服务管理脚本需要飞牛 fnOS 运行环境。"
+  command -v node >/dev/null 2>&1 || fail "Node.js 22 运行时不可用，请检查依赖应用。"
+  mkdir -p "$TRIM_PKGVAR" || fail "无法访问应用数据目录。"
+  lock_control
+  if read_running_process; then
+    return 0
+  fi
+  # Never unlink an active socket merely because a PID record is missing.
+  node - "$SOCKET" <<'NODE'
+const fs = require('node:fs');
+const net = require('node:net');
+const path = process.argv[2];
+try {
+  if (!fs.lstatSync(path).isSocket()) process.exit(1);
+} catch (error) {
+  if (error.code === 'ENOENT') process.exit(0);
+  process.exit(1);
+}
+const probe = net.createConnection({ path });
+probe.setTimeout(1000);
+probe.once('connect', () => {
+  probe.destroy();
+  process.exit(2);
+});
+probe.once('timeout', () => {
+  probe.destroy();
+  process.exit(1);
+});
+probe.once('error', (error) => {
+  if (error.code === 'ECONNREFUSED' || error.code === 'ENOENT') {
+    try { fs.unlinkSync(path); }
+    catch (unlinkError) { if (unlinkError.code !== 'ENOENT') process.exit(1); }
+    process.exit(0);
+  }
+  process.exit(1);
+});
+NODE
+  local socket_status=$?
+  [ "$socket_status" -ne 2 ] || fail "已有服务占用应用连接，请先停止原有服务后重试。"
+  [ "$socket_status" -eq 0 ] || fail "无法准备应用连接文件，请检查安装目录权限。"
+  rm -f "$PID_FILE"
+  cd "$TRIM_APPDEST" || fail "无法访问应用安装目录。"
+  log "Starting DangjianRecorder"
+  nohup node "$SERVER" --socket "$SOCKET" --data-dir "$TRIM_PKGVAR" >> "$LOG_FILE" 2>&1 < /dev/null &
+  APP_PID="$!"
+  APP_START="$(process_start_time "$APP_PID")"
+  [ -n "$APP_START" ] || fail "服务未能启动，请查看应用日志。"
+  printf '%s %s\n' "$APP_PID" "$APP_START" > "$PID_FILE"
+  local count=0
+  while [ "$count" -lt 20 ]; do
+    if matches_process "$APP_PID" "$APP_START" && [ -S "$SOCKET" ]; then
+      log "Started DangjianRecorder (pid=$APP_PID)"
+      return 0
+    fi
+    kill -0 "$APP_PID" 2>/dev/null || break
+    count=$((count + 1))
+    sleep 1
+  done
+  terminate_process "$APP_PID" "$APP_START"
+  rm -f "$PID_FILE"
+  fail "服务未能完成启动，请查看应用日志。"
+}
+
+stop_app() {
+  [ -d "$TRIM_PKGVAR" ] || return 0
+  lock_control
+  if ! read_running_process; then
+    rm -f "$PID_FILE"
+    return 0
+  fi
+  log "Stopping DangjianRecorder (pid=$APP_PID)"
+  terminate_process "$APP_PID" "$APP_START"
+  rm -f "$PID_FILE" "$SOCKET"
+  log "Stopped DangjianRecorder"
+}
+
+case "${1:-}" in
+  start) start_app ;;
+  stop) stop_app ;;
+  status)
+    if read_running_process && [ -S "$SOCKET" ]; then
+      exit 0
+    fi
+    exit 3
+    ;;
+  *) fail "不支持的操作，请使用 start、stop 或 status。" ;;
+esac

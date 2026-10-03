@@ -1,0 +1,9 @@
+apiVersion: plugin.halo.run/v1alpha1
+kind: ExtensionDefinition
+metadata:
+  name: dangjian-webfilter
+spec:
+  className: cn.wanlidecai.dangjian.DangjianWebFilter
+  extensionPointName: after-security-webfilter
+  displayName: 党建会议记录页面
+  description: 在设置指定的路径提供会议记录生成页面和接口。

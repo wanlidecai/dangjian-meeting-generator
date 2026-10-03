@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eu
+umask 077
+if [ -z "${TRIM_PKGVAR:-}" ]; then
+  [ -z "${TRIM_TEMP_LOGFILE:-}" ] || printf '%s\n' "缺少应用数据目录。" > "$TRIM_TEMP_LOGFILE"
+  exit 1
+fi
+mkdir -p "$TRIM_PKGVAR"
+chmod 700 "$TRIM_PKGVAR"

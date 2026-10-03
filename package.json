@@ -1,0 +1,23 @@
+{
+  "name": "party-record-generator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "server.js",
+  "bin": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js",
+    "test:fnos": "node --test fnos-app/tests/*.test.js",
+    "build:fnos": "bash fnos-app/scripts/build.sh",
+    "build:win": "pkg . --targets node18-win-x64 --no-bytecode --public --output dist/党建会议记录生成器.exe"
+  },
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ]
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
+}

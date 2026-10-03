@@ -1,0 +1,3 @@
+#!/bin/bash
+# Configure model credentials in the application's administrator page.
+exit 0

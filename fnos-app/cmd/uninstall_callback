@@ -1,0 +1,3 @@
+#!/bin/bash
+# Runtime data is not actively removed by the application.
+exit 0

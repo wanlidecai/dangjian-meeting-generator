@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>党建会议记录生成器</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <h1>党建会议记录生成器</h1>
+            <p>输入议题，编辑人员，自动生成可归档记录。</p>
+          </div>
+          <button id="generateBtn" class="primary-btn" type="button">生成记录</button>
+        </header>
+
+        <div id="configurationCallout" class="configuration-callout" role="status" hidden>
+          <p>请先配置 DeepSeek API Key，再生成会议记录。</p>
+          <button id="configureBtn" class="ghost-btn" type="button">打开应用设置</button>
+        </div>
+
+        <details id="settingsDetails" class="panel settings-panel">
+          <summary><span>应用设置</span><span id="keyConfiguredBadge" class="configuration-badge">正在读取配置…</span></summary>
+          <form id="settingsForm" class="settings-form">
+            <p class="field-hint settings-intro">在 NAS 上保存模型配置。密钥不会回显，关闭设置面板后也会保留。</p>
+            <label for="apiKeyInput"><span>DeepSeek API Key</span><input id="apiKeyInput" type="password" autocomplete="new-password" spellcheck="false" placeholder="输入 API Key" aria-describedby="apiKeyHint" /></label>
+            <p id="apiKeyHint" class="field-hint">已配置时留空保存会保留现有密钥。请勿将密钥填写在会议议题或记录中。</p>
+            <label class="checkbox-field" for="clearApiKeyInput"><input id="clearApiKeyInput" type="checkbox" /><span>明确清除已保存的 API Key</span></label>
+            <div class="settings-grid">
+              <label for="modelInput"><span>模型</span><input id="modelInput" type="text" list="modelOptions" value="deepseek-v4-flash" autocomplete="off" spellcheck="false" /></label>
+              <datalist id="modelOptions"><option value="deepseek-v4-flash">Flash</option><option value="deepseek-v4-pro">Pro</option></datalist>
+              <label for="basePathInput"><span>访问路径</span><input id="basePathInput" type="text" value="/dangjian" placeholder="/dangjian" autocomplete="off" spellcheck="false" aria-describedby="basePathHint" /></label>
+            </div>
+            <p id="basePathHint" class="field-hint">例如 /dangjian。飞牛应用网关前缀保持不变；改路径会重新打开页面，请先下载需要保留的记录。</p>
+            <label class="checkbox-field" for="sourceSearchInput"><input id="sourceSearchInput" type="checkbox" checked /><span>生成前检索参考来源</span></label>
+            <div class="settings-footer"><p id="settingsStatus" class="field-hint" role="status" aria-live="polite">正在读取配置…</p><button id="saveSettingsBtn" class="primary-btn" type="submit">保存设置</button></div>
+          </form>
+        </details>
+
+        <section class="panel meeting-type-panel">
+          <label for="meetingTypeInput">
+            <span>会议类型</span>
+            <select id="meetingTypeInput">
+              <option value="theme-day">主题党日</option>
+              <option value="members-meeting">党员大会</option>
+              <option value="committee-meeting">支委会</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">
+            <h2>议题</h2>
+            <button id="addTopicBtn" class="ghost-btn" type="button">增加议题</button>
+          </div>
+          <div id="topicsList" class="topics-list"></div>
+        </section>
+
+        <section id="branchMattersPanel" class="panel" hidden>
+          <div class="section-title">
+            <h2>支部事项</h2>
+          </div>
+          <label class="branch-matters-field" for="branchMattersInput">
+            <span>讨论事项（每行一项）</span>
+            <textarea id="branchMattersInput" rows="4" aria-describedby="branchMattersHint">研究党员大会议程及组织安排
+讨论党员发展工作及培养考察安排</textarea>
+          </label>
+          <p id="branchMattersHint" class="field-hint">请按实际会议修改，留空时使用默认事项。生成时将在学习议题后增加这些事项的讨论。</p>
+        </section>
+
+        <section class="panel people-panel">
+          <div class="section-title">
+            <h2>人员</h2>
+            <button id="addPersonBtn" class="ghost-btn" type="button">增加成员</button>
+          </div>
+          <div class="role-grid">
+            <label>
+              <span>党支部书记</span>
+              <input id="secretaryInput" type="text" value="李强" />
+            </label>
+            <label>
+              <span>副书记</span>
+              <input id="deputyInput" type="text" value="郭琳" />
+            </label>
+            <label>
+              <span>委员</span>
+              <input id="committeeInput" type="text" value="王丽" />
+            </label>
+          </div>
+          <div id="peopleList" class="people-list"></div>
+          <p id="committeePeopleHint" class="field-hint" hidden>支委会参会人员为书记、副书记和委员。</p>
+        </section>
+      </section>
+
+      <aside class="result-panel">
+        <div class="result-header">
+          <div>
+            <h2 id="resultTitle">生成结果</h2>
+            <span id="statusText" role="status" aria-live="polite">等待生成</span>
+          </div>
+          <div class="result-actions">
+            <button id="copyBtn" class="icon-btn" type="button" title="复制">复制</button>
+            <button id="downloadBtn" class="icon-btn" type="button" title="下载">下载</button>
+          </div>
+        </div>
+        <textarea id="resultText" spellcheck="false" aria-label="会议记录生成结果，可直接修改" wrap="soft" placeholder="生成后的会议记录会显示在这里，可直接修改和复制。"></textarea>
+        <div id="sourcesBox" class="sources-box"></div>
+      </aside>
+    </main>
+
+    <template id="topicTemplate">
+      <div class="topic-row">
+        <div class="topic-index"></div>
+        <input class="topic-input" type="text" placeholder="请输入议题题目" aria-label="会议议题" />
+        <button class="remove-btn" type="button" aria-label="删除此议题">删除</button>
+      </div>
+    </template>
+
+    <template id="personTemplate">
+      <div class="person-chip">
+        <input class="person-input" type="text" aria-label="党员姓名" />
+        <button class="remove-person-btn" type="button" aria-label="删除此成员">×</button>
+      </div>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

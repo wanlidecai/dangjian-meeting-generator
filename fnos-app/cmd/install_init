@@ -1,0 +1,3 @@
+#!/bin/bash
+# Installation requires no host modifications.
+exit 0

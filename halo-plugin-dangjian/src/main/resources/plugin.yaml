@@ -1,0 +1,19 @@
+# Refer https://docs.halo.run/developer-guide/plugin/basics/manifest
+
+apiVersion: plugin.halo.run/v1alpha1
+kind: Plugin
+metadata:
+  # The name defines how the plugin is invoked, A unique name
+  name: dangjian
+spec:
+  requires: ">=2.26.0"
+  author:
+    name: wanlidecai
+  logo: logo.png
+  settingName: dangjian-settings
+  configMapName: dangjian-config
+  displayName: "党建会议记录生成器"
+  description: "生成主题党日、党员大会及支委会记录，支持自定义访问路径。"
+  license:
+    - name: "GPL-3.0"
+      url: "https://www.gnu.org/licenses/gpl-3.0.html"
